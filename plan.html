@@ -34,12 +34,23 @@
         }
 
         .weekend {
-            background-color: #929292;
+            background-color: #d1d5db; /* Light gray color */
+            color: #9ca3af; /* Gray text color */
             cursor: default;
         }
 
         .weekend:hover {
-            background-color: #929292;
+            background-color: #d1d5db;
+        }
+
+        .excluded {
+            background-color: #d1d5db; /* Light gray color */
+            color: #9ca3af; /* Gray text color */
+            cursor: default; /* Default cursor for excluded days */
+        }
+
+        .excluded:hover {
+            background-color: #d1d5db;
         }
 
         .not-available {
@@ -88,11 +99,11 @@
         <div class="mb-6">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Wochentage</h2>
             <div id="weekdays-container" class="flex justify-center space-x-4">
-                <label><input type="checkbox" class="weekday-checkbox" value="Monday" checked> Montag</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="Tuesday" checked> Dienstag</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="Wednesday" checked> Mittwoch</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="Thursday" checked> Donnerstag</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="Friday" checked> Freitag</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="Mo" checked> Montag</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="Di" checked> Dienstag</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="Mi" checked> Mittwoch</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="Do" checked> Donnerstag</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="Fr" checked> Freitag</label>
             </div>
         </div>
         
@@ -126,6 +137,7 @@
 
         let usersData = []; // To store user data temporarily
         let formattedUsers = []; // To store the formatted users data
+        let selectedWeekdays = [];
 
         // Load users and populate year select box
         window.onload = () => {
@@ -170,7 +182,9 @@
         function updateCalendar() {
             // Clear not_available array for each user when switching months or years
             formattedUsers.forEach(user => user.not_available = []);
-
+            selectedWeekdays = Array.from(document.querySelectorAll('.weekday-checkbox:checked'))
+            .map(checkbox => checkbox.value);
+            
             populateUserTable(formattedUsers); // Update the user table with the formatted users data
         }
 
@@ -217,6 +231,7 @@
                 }
 
                 const daysInMonth = new Date(year, parseInt(month) + 1, 0).getDate(); // Get number of days in the month
+                
                 for (let day = 1; day <= daysInMonth; day++) {
                     const dayButton = document.createElement('div');
                     dayButton.classList.add('calendar-day');
@@ -224,32 +239,40 @@
 
                     // Check if the day is Saturday (6) or Sunday (0)
                     const dayOfWeek = new Date(year, parseInt(month), day).getDay();
+                    const dayName = daysOfWeek[dayOfWeek - 1];
+                    console.log(day, dayOfWeek, dayName)
+
+                   // console.log(dayName, dayOfWeek, !selectedWeekdays.includes(dayName), selectedWeekdays)
+
                     if (dayOfWeek === 0 || dayOfWeek === 6) {
                         dayButton.classList.add('weekend'); // Grey out weekend days
-                    } else {
-                        // Check if the day is already not available for the user
-                        const isNotAvailable = user.not_available.includes(`${year}-${parseInt(month) + 1}-${day}`);
-                        if (isNotAvailable) {
-                            dayButton.classList.add('not-available'); // Highlight already not available days
-                        }
-                        dayButton.addEventListener('click', () => {
-                            // Toggle day availability
-                            const dateKey = `${year}-${parseInt(month) + 1}-${day}`;
-
-                            // Check if the day is currently in not_available
-                            const isCurrentlyNotAvailable = user.not_available.includes(dateKey);
-                            if (isCurrentlyNotAvailable) {
-                                // Remove from not_available
-                                user.not_available = user.not_available.filter(date => date !== dateKey);
-                                dayButton.classList.remove('not-available'); // Change button color back
-                            } else {
-                                // Add to not_available
-                                user.not_available.push(dateKey);
-                                dayButton.classList.add('not-available'); // Highlight
+                    } else if (!selectedWeekdays.includes(dayName)) {
+                        
+                            // If the day is not in the selected weekdays, mark it as excluded
+                            dayButton.classList.add('excluded'); // Gray out excluded days
+                            dayButton.style.cursor = 'default'; // Ensure default cursor
+                        } else {
+                            // Check if the day is already not available for the user
+                            const isNotAvailable = user.not_available.includes(`${year}-${parseInt(month) + 1}-${day}`);
+                            if (isNotAvailable) {
+                                dayButton.classList.add('not-available'); // Highlight already not available days
                             }
+                            dayButton.addEventListener('click', () => {
+                                // Toggle day availability
+                                const dateKey = `${year}-${parseInt(month) + 1}-${day}`;
 
-                            console.log(user.not_available); // For debugging
-                        });
+                                // Check if the day is currently in not_available
+                                const isCurrentlyNotAvailable = user.not_available.includes(dateKey);
+                                if (isCurrentlyNotAvailable) {
+                                    // Remove from not_available
+                                    user.not_available = user.not_available.filter(date => date !== dateKey);
+                                    dayButton.classList.remove('not-available'); // Change button color back
+                                } else {
+                                    // Add to not_available
+                                    user.not_available.push(dateKey);
+                                    dayButton.classList.add('not-available'); // Highlight
+                                }
+                            });
                     }
 
                     daysContainer.appendChild(dayButton);
@@ -284,6 +307,16 @@
                 console.error(error.message);
             }
         });
+
+        // Add this inside your window.onload function, right after populating the year select box
+        document.querySelectorAll('.weekday-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                // Call updateCalendar whenever a checkbox is checked/unchecked
+                updateCalendar();
+            });
+        });
+
+        // The rest of your window.onload function...
 
     </script>
 </body>
