@@ -7,7 +7,7 @@ function assignUsersToCalendar(month, year, users, options = {}) {
     const userPinnedCount = {}; // To track how many days each user is pinned
 
     // Set default options for weekdays and holidays
-    const { weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], holidays = [] } = options;
+    const { weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], holidays = [], teamdays = [] } = options;
 
     // Initialize pinned count for each user to 0
     users.forEach(user => {
@@ -24,6 +24,11 @@ function assignUsersToCalendar(month, year, users, options = {}) {
     function isHoliday(date) {
         const formattedDate = `${year}-${month}-${date}`;
         return holidays.includes(formattedDate);
+    }
+
+    function isTeamDay(date) {
+        const formattedDate = `${year}-${month}-${date}`;
+        return teamdays.includes(formattedDate) 
     }
 
     // Helper function to check if a day is within the valid weekdays
@@ -49,21 +54,34 @@ function assignUsersToCalendar(month, year, users, options = {}) {
 
         const availableUsers = getAvailableUsersForDay(day);
 
+
+        if (isTeamDay(day)) {
+            // If it's a team day, assign one user and mark the second slot as "Team"
+            if (availableUsers.length < 1) {
+                throw new Error(`No available users for team day ${day}`);
+            }
+
+            const selectedUser = availableUsers[0]; // Get the first available user
+            calendar[day] = [selectedUser.name, 'Team']; // Assign user and "Team" for the second slot
+            userPinnedCount[selectedUser.name]++; // Increment the pinned count for the selected user
+
+        } else {
         // If fewer than 2 users are available for the day, we cannot assign it properly
-        if (availableUsers.length < 2) {
-            throw new Error(`Not enough users available for day ${day}`);
+            if (availableUsers.length < 2) {
+                throw new Error(`Not enough users available for day ${day}`);
+            }
+
+            // Pick the top two least pinned users for the day
+            const selectedUsers = availableUsers.slice(0, 2);
+
+            // Assign these users to the calendar for the current day
+            calendar[day] = selectedUsers.map(user => user.name);
+
+            // Increment the pinned count for each selected user
+            selectedUsers.forEach(user => {
+                userPinnedCount[user.name]++;
+            });
         }
-
-        // Pick the top two least pinned users for the day
-        const selectedUsers = availableUsers.slice(0, 2);
-
-        // Assign these users to the calendar for the current day
-        calendar[day] = selectedUsers.map(user => user.name);
-
-        // Increment the pinned count for each selected user
-        selectedUsers.forEach(user => {
-            userPinnedCount[user.name]++;
-        });
     }
 
     return calendar;
