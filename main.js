@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -69,6 +69,18 @@ function createWindow() {
   ipcMain.on('navigate', (event, page) => {
     win.loadFile(page); // Load the specified page
   });
+
+  ipcMain.handle('save-pdf-dialog', async () => {
+    const result = await dialog.showSaveDialog({
+        title: 'Save PDF',
+        defaultPath: 'Elterndienst.pdf', // Default file name
+        filters: [
+            { name: 'PDF Files', extensions: ['pdf'] }
+        ]
+    });
+
+    return result;
+});
 }
 
 app.whenReady().then(createWindow);

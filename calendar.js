@@ -77,12 +77,12 @@ function formatDate(day, month, year) {
 }
 
 // Function to generate the PDF
-function generatePDF(calendar, month, year) {
+function generatePDF(calendar, month, year, filePath) {
     // Create a new PDF document
     const doc = new PDFDocument();
 
     // Pipe the output to a file
-    doc.pipe(fs.createWriteStream('Calendar.pdf'));
+    doc.pipe(fs.createWriteStream(filePath));
 
     // Add a title
     doc.fontSize(18).text(`Eltern Calendar for ${formatDate(1, month, year).split(' ')[1]} ${year}`, {

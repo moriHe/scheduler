@@ -243,7 +243,7 @@
             });
         }
 
-        document.getElementById('generate-pdf-button').addEventListener('click', () => {
+        document.getElementById('generate-pdf-button').addEventListener('click', async () => {
             const month = parseInt(document.getElementById('month').value) + 1; // Add 1 because months are 0-indexed in JS
             const year = parseInt(document.getElementById('year').value);
 
@@ -254,8 +254,11 @@
 
             try {
                 const calendar = assignUsersToCalendar(month, year, formattedUsers, options); // Pass the formatted users array
-                generatePDF(calendar, month, year);
-                console.log('PDF generated successfully.');
+                const { filePath } = await ipcRenderer.invoke('save-pdf-dialog');
+                if (filePath) {
+                    generatePDF(calendar, month, year, filePath);
+                    console.log('PDF generated successfully at: ' + filePath);
+                }
             } catch (error) {
                 console.error(error.message);
             }
