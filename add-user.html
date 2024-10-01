@@ -5,6 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Benutzer Hinzufügen</title>
     <link rel="stylesheet" href="./src/output.css">
+    <style>
+        .user-tile {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #e2e8f0; /* Light gray border */
+            border-radius: 8px; /* Rounded corners */
+            background-color: #f7fafc; /* Light background */
+        }
+        
+        .delete-button {
+            background: none;
+            border: none;
+            color: #e53e3e; /* Red color */
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .delete-button:hover {
+            color: #c53030; /* Darker red on hover */
+        }
+    </style>
 </head>
 <body class="bg-gray-100 h-screen flex items-center justify-center">
 
@@ -38,31 +62,50 @@
 
         <!-- List of saved users -->
         <h2 class="text-xl font-semibold text-green-600 mt-6">Familien:</h2>
-        <ol id="user-list" class="list-decimal ml-6 mt-2 space-y-1 text-gray-700">
+        <div id="user-list" class="mt-2 space-y-1">
             <!-- User list items will go here -->
-        </ol>
+        </div>
     </div>
 
     <script>
         const { ipcRenderer } = require('electron');
 
-        // Function to load users and display them
+        // Function to load users and display them as tiles
         function loadUsers() {
             ipcRenderer.invoke('load-users').then(users => {
                 const userList = document.getElementById('user-list');
                 userList.innerHTML = ''; // Clear the list first
 
-                // Add each user to the list
+                // Add each user to the list as a tile
                 if (Array.isArray(users)) { // Check if users is an array
                     users.forEach(user => {
-                        const li = document.createElement('li');
-                        li.textContent = user; // Display the user's name
-                        userList.appendChild(li);
+                        const userTile = document.createElement('div');
+                        userTile.className = 'user-tile';
+
+                        const userName = document.createElement('span');
+                        userName.textContent = user; // Display the user's name
+                        userTile.appendChild(userName);
+
+                        // Create delete button
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = '🗑️'; // Trash icon
+                        deleteButton.className = 'delete-button';
+                        deleteButton.onclick = () => deleteUser(user);
+                        userTile.appendChild(deleteButton);
+
+                        userList.appendChild(userTile);
                     });
                 } else {
                     console.error('Loaded users is not an array:', users);
                 }
             });
+        }
+
+        // Function to delete a user
+        function deleteUser(userName) {
+            // Send the user name to the main process to delete it
+            ipcRenderer.send('delete-user', userName);
+            loadUsers(); // Reload the users after deleting
         }
 
         // Call loadUsers when the page is loaded

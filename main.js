@@ -64,6 +64,27 @@ function createWindow() {
         console.log('Users JSON file has been reset.');
     });
 
+    // Logic to delete the user from your data source
+    ipcMain.on('delete-user', (event, userName) => {
+      if (fs.existsSync(dataFilePath)) {
+          const data = fs.readFileSync(dataFilePath);
+          try {
+              const parsedData = JSON.parse(data);
+              if (Array.isArray(parsedData)) {
+                  // Filter out the user to delete
+                  const updatedUsers = parsedData.filter(user => user !== userName);
+                  
+                  // Save the updated list back to the file
+                  fs.writeFileSync(dataFilePath, JSON.stringify(updatedUsers, null, 2));
+                  console.log(`User ${userName} deleted successfully.`);
+              }
+          } catch (error) {
+              console.error('Error parsing JSON on delete:', error);
+          }
+      }
+    });
+  
+
 
   // Handle navigation between pages
   ipcMain.on('navigate', (event, page) => {
