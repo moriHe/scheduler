@@ -51,6 +51,7 @@ function assignUsersToCalendar(month, year, users, options = {}) {
     for (let day = 1; day <= daysInMonth; day++) {
         // Skip the day if it's a holiday or not a valid weekday
         if (!isValidWeekday(day) || isHoliday(day)) {
+            calendar[day] = ["", ""]
             continue;
         }
 
@@ -92,7 +93,7 @@ function assignUsersToCalendar(month, year, users, options = {}) {
 // Helper function to format the date in the "1. Okt. Dienstag" format
 function formatDate(day, month, year) {
     const date = new Date(year, month - 1, day);
-    return format(date, 'dd.MM.', { locale: de });
+    return format(date, 'dd.MM.yy', { locale: de });
 }
 
 // Helper function to get day of the week as "Mo, Di, Mi" etc.
@@ -120,13 +121,22 @@ async function generatePDF(calendar, month, year, filePath, excludedDays, holida
 
     for (const day in calendar) {
         const [parent1, parent2] = calendar[day];
-        rows.push([`${formatDate(day, month, year)}`, `${formatDayOfWeek(day, month, year)}`, parent1, `${formatDate(day, month, year)}`, `${formatDayOfWeek(day, month, year)}`, parent2])
+        let dateParent1 = `${formatDate(day, month, year)}`
+        let dayParent1 = `${formatDayOfWeek(day, month, year)}`
+        let dateParent2 = `${formatDate(day, month, year)}`
+        let dayParent2 = `${formatDayOfWeek(day, month, year)}`
+
+        if (parent2 === "") {
+            dayParent2 = ""
+            dateParent2 = ""
+        }
+        rows.push([dayParent1, dateParent1, parent1, dayParent2, dateParent2, parent2])
     }
 
 
     // Prepare the table data with headers
     const table = {
-        headers: ['Datum', 'Tag', 'Elternpaar 1', 'Datum', 'Tag', 'Elternpaar 2'],
+        headers: ['Tag', 'Datum', 'Elternpaar 1', 'Tag', 'Datum', 'Elternpaar 2'],
         rows
     };
 
@@ -134,16 +144,20 @@ async function generatePDF(calendar, month, year, filePath, excludedDays, holida
     doc.table(table, {
         prepareHeader: () => doc.font("Helvetica-Bold").fontSize(8),
         prepareRow: (row, indexColumn, indexRow, rectRow, rectCell) => {
-            doc.font("Helvetica").fontSize(8).fillColor('black'); // Set font color to black
+            doc.fillColor("#000000");
+            doc.font("Helvetica")
+            doc.fontSize(8);
 
-            // Alternate row background colors
-            if (indexRow % 2 !== 0) {
-                doc.addBackground(rectRow, 'lightgray', 0.25);  // Odd rows (light red)
+            if (row[2] === "" && row[5] === "") {
+                doc.addBackground(rectCell, "#FFCCCB", 0.5)
+                doc.fillColor("lightgray")
+            } else if (indexRow % 2 !== 0) {
+                doc.addBackground(rectCell, 'lightgray', 0.5);
             }
 
         },
-        columnsSize: [40, 20, 220, 40, 20, 220],
-        minRowHeight: 20
+        columnsSize: [20, 40, 220, 20, 40, 220],
+        minRowHeight: 15
     });    
     
     
