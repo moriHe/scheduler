@@ -32,6 +32,13 @@
         .calendar-day.not-available {
             background-color: #FFCCBC; /* Light red background for not available */
             color: #D32F2F; /* Dark red text */
+            cursor: not-allowed; /* Change cursor to indicate not clickable */
+        }
+
+        .calendar-day.weekend {
+            background-color: #E0E0E0; /* Light grey for weekends */
+            color: #A0A0A0; /* Darker grey text */
+            cursor: not-allowed; /* Change cursor to indicate not clickable */
         }
 
         .calendar-header {
@@ -166,8 +173,8 @@
                 const daysContainer = document.createElement('div');
                 daysContainer.classList.add('calendar');
 
-                // Add day headers (So, Mo, Di, Mi, Do, Fr, Sa)
-                const daysOfWeek = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+                // Add day headers (Mo, Di, Mi, Do, Fr, Sa, So)
+                const daysOfWeek = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
                 daysOfWeek.forEach(day => {
                     const dayHeader = document.createElement('div');
                     dayHeader.classList.add('calendar-header');
@@ -176,8 +183,10 @@
                 });
 
                 // Fill in empty cells for alignment
-                const firstDayOfMonth = new Date(year, parseInt(month), 1).getDay();
-                for (let i = 0; i < firstDayOfMonth; i++) {
+                const firstDayOfMonth = new Date(year, parseInt(month), 1).getDay(); // Get day index (0-6) where 0 is Sunday
+                const firstDayAdjusted = (firstDayOfMonth + 6) % 7; // Adjust for the new starting day (Monday)
+                
+                for (let i = 0; i < firstDayAdjusted; i++) {
                     const emptyCell = document.createElement('div');
                     emptyCell.classList.add('calendar-day'); // Keep the style
                     daysContainer.appendChild(emptyCell);
@@ -189,28 +198,33 @@
                     dayButton.classList.add('calendar-day');
                     dayButton.textContent = day;
 
-                    // Check if the day is already not available for the user
-                    const isNotAvailable = user.not_available.includes(`${year}-${parseInt(month) + 1}-${day}`);
-                    if (isNotAvailable) {
-                        dayButton.classList.add('not-available'); // Highlight already not available days
-                    }
-
-                    dayButton.addEventListener('click', () => {
-                        // Toggle day availability
-                        const dateKey = `${year}-${parseInt(month) + 1}-${day}`;
-
-                        // Check if the day is currently in not_available
-                        const isCurrentlyNotAvailable = user.not_available.includes(dateKey);
-                        if (isCurrentlyNotAvailable) {
-                            // Remove from not_available
-                            user.not_available = user.not_available.filter(date => date !== dateKey);
-                            dayButton.classList.remove('not-available'); // Change button color back
-                        } else {
-                            // Add to not_available
-                            user.not_available.push(dateKey);
-                            dayButton.classList.add('not-available'); // Change button color to indicate selection
+                    // Check if the day is Saturday (6) or Sunday (0)
+                    const dayOfWeek = new Date(year, parseInt(month), day).getDay();
+                    if (dayOfWeek === 0 || dayOfWeek === 6) {
+                        dayButton.classList.add('weekend'); // Grey out weekend days
+                    } else {
+                        // Check if the day is already not available for the user
+                        const isNotAvailable = user.not_available.includes(`${year}-${parseInt(month) + 1}-${day}`);
+                        if (isNotAvailable) {
+                            dayButton.classList.add('not-available'); // Highlight already not available days
                         }
-                    });
+                        dayButton.addEventListener('click', () => {
+                            // Toggle day availability
+                            const dateKey = `${year}-${parseInt(month) + 1}-${day}`;
+
+                            // Check if the day is currently in not_available
+                            const isCurrentlyNotAvailable = user.not_available.includes(dateKey);
+                            if (isCurrentlyNotAvailable) {
+                                // Remove from not_available
+                                user.not_available = user.not_available.filter(date => date !== dateKey);
+                                dayButton.classList.remove('not-available'); // Change button color back
+                            } else {
+                                // Add to not_available
+                                user.not_available.push(dateKey);
+                                dayButton.classList.add('not-available'); // Change button color to indicate selection
+                            }
+                        });
+                    }
 
                     daysContainer.appendChild(dayButton);
                 }
