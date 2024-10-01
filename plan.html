@@ -84,6 +84,19 @@
             </select>
         </div>
 
+        <!-- Available days -->
+        <div class="mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Wochentage</h2>
+            <div id="weekdays-container" class="flex justify-center space-x-4">
+                <label><input type="checkbox" class="weekday-checkbox" value="Monday" checked> Montag</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="Tuesday" checked> Dienstag</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="Wednesday" checked> Mittwoch</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="Thursday" checked> Donnerstag</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="Friday" checked> Freitag</label>
+            </div>
+        </div>
+        
+
         <!-- Users and Calendar Table -->
         <h2 class="text-xl font-bold text-gray-800 mb-4">Benutzer</h2>
         <table class="min-w-full bg-white border border-gray-300">
@@ -252,8 +265,11 @@
             const month = parseInt(document.getElementById('month').value) + 1; // Add 1 because months are 0-indexed in JS
             const year = parseInt(document.getElementById('year').value);
 
+            const selectedWeekdays = Array.from(document.querySelectorAll('.weekday-checkbox:checked'))
+                .map(checkbox => checkbox.value);
+
             const options = {
-                weekdays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], // Only weekdays
+                weekdays: selectedWeekdays, // only week days
                 holidays: ["2024-10-03", "2024-10-31"] // List of holidays
             };
 
@@ -268,6 +284,7 @@
                 console.error(error.message);
             }
         });
+
     </script>
 </body>
 
