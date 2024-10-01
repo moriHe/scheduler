@@ -7,49 +7,46 @@
     <title>Plan erstellen</title>
     <link rel="stylesheet" href="./src/output.css">
     <style>
+        /* Calendar styling */
         .calendar {
             display: grid;
-            grid-template-columns: repeat(7, 1fr); /* 7 columns for days of the week */
-            gap: 10px; /* Space between days */
-            margin: 0 auto; /* Center the calendar */
-            max-width: 600px; /* Maximum width of the calendar */
-        }
-
-        .calendar-day {
-            background-color: #E0F7FA; /* Light cyan background */
-            border: 1px solid #00796B; /* Teal border */
-            border-radius: 5px; /* Rounded corners */
-            padding: 10px; /* Space inside each day */
-            text-align: center; /* Center text */
-            cursor: pointer; /* Change cursor on hover */
-            transition: background-color 0.3s; /* Smooth color transition */
-        }
-
-        .calendar-day:hover {
-            background-color: #B2EBF2; /* Darker cyan on hover */
-        }
-
-        .calendar-day.not-available {
-            background-color: #FFCCBC; /* Light red background for not available */
-            color: #D32F2F; /* Dark red text */
-            cursor: not-allowed; /* Change cursor to indicate not clickable */
-        }
-
-        .calendar-day.weekend {
-            background-color: #E0E0E0; /* Light grey for weekends */
-            color: #A0A0A0; /* Darker grey text */
-            cursor: not-allowed; /* Change cursor to indicate not clickable */
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 10px;
         }
 
         .calendar-header {
             font-weight: bold;
-            font-size: 1.2rem; /* Larger text for headers */
-            color: #00796B; /* Teal text color */
-            text-align: center; /* Center header text */
+            padding: 5px;
+            background-color: #f3f4f6;
+            border: 1px solid #e5e7eb;
         }
 
-        .header-container {
-            display: contents; /* Allow grid layout */
+        .calendar-day {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+        }
+
+        .calendar-day:hover {
+            background-color: #e5e7eb;
+        }
+
+        .weekend {
+            background-color: #f8fafc; /* Light gray for weekends */
+        }
+
+        .not-available {
+            background-color: #f87171; /* Red for not available */
+            color: white;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .calendar-day {
+                padding: 5px;
+            }
         }
     </style>
 </head>
@@ -100,10 +97,7 @@
             Generate Calendar PDF
         </button>
 
-        <button 
-            id="back-button" 
-            class="mt-4 w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
-        >
+        <button id="back-button" class="mt-4 w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400">
             Zurück
         </button>
     </div>
@@ -113,14 +107,15 @@
         const { assignUsersToCalendar, generatePDF } = require('./calendar.js');
 
         let usersData = []; // To store user data temporarily
+        let formattedUsers = []; // To store the formatted users data
 
         // Load users and populate year select box
         window.onload = () => {
             ipcRenderer.invoke('load-users').then(users => {
                 usersData = users; // Store the user data temporarily
-                const formattedUsers = formatUsersData(usersData); // Convert to required format
                 populateYearSelect();
-                populateUserTable(formattedUsers); // Use the formatted users data
+                formatUsersData(usersData); // Convert to required format only once
+                updateCalendar(); // Populate the calendar for the default month/year
             });
 
             // Go back to the front page
@@ -135,7 +130,10 @@
 
         function formatUsersData(users) {
             // Convert the flat user array into the desired object format
-            return users.map(user => ({ name: user, not_available: [] })); // Adjust here to include not_available if needed
+            formattedUsers = users.map(user => ({
+                name: user,
+                not_available: [] // Initialize not_available for each user
+            }));
         }
 
         function populateYearSelect() {
@@ -152,8 +150,10 @@
         }
 
         function updateCalendar() {
-            const users = formatUsersData(usersData); // Reformat users data
-            populateUserTable(users); // Update the user table with the new month/year
+            // Clear not_available array for each user when switching months or years
+            formattedUsers.forEach(user => user.not_available = []);
+
+            populateUserTable(formattedUsers); // Update the user table with the formatted users data
         }
 
         function populateUserTable(users) {
@@ -227,20 +227,23 @@
                             } else {
                                 // Add to not_available
                                 user.not_available.push(dateKey);
-                                dayButton.classList.add('not-available'); // Change button color to indicate selection
+                                dayButton.classList.add('not-available'); // Highlight
                             }
+
+                            console.log(user.not_available); // For debugging
                         });
                     }
 
                     daysContainer.appendChild(dayButton);
                 }
+
                 calendarCell.appendChild(daysContainer);
                 row.appendChild(calendarCell);
                 userTableBody.appendChild(row);
             });
         }
 
-        function createAndDownloadCalendarPDF() {
+        document.getElementById('generate-pdf-button').addEventListener('click', () => {
             const month = parseInt(document.getElementById('month').value) + 1; // Add 1 because months are 0-indexed in JS
             const year = parseInt(document.getElementById('year').value);
 
@@ -250,17 +253,13 @@
             };
 
             try {
-                const formattedUsers = formatUsersData(usersData); // Format users data here
                 const calendar = assignUsersToCalendar(month, year, formattedUsers, options); // Pass the formatted users array
                 generatePDF(calendar, month, year);
                 console.log('PDF generated successfully.');
             } catch (error) {
                 console.error(error.message);
             }
-        }
-
-        // Attach the PDF generation function to an event, e.g., a button click
-        document.getElementById('generate-pdf-button').addEventListener('click', createAndDownloadCalendarPDF);
+        });
     </script>
 </body>
 
