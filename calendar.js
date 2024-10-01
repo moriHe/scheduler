@@ -156,7 +156,7 @@ async function generatePDF(calendar, month, year, filePath, excludedDays, holida
             }
 
         },
-        columnsSize: [20, 40, 220, 20, 40, 220],
+        columnsSize: [20, 40, 250, 20, 40, 220],
         minRowHeight: 15
     });    
     
