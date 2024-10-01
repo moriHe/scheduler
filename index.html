@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eltern Calendar - Front Page</title>
+    <link rel="stylesheet" href="./src/output.css">
+</head>
+
+<body class="bg-gray-100 h-screen flex items-center justify-center">
+    <div class="bg-white shadow-md rounded-lg p-8 w-full max-w-lg text-center">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Willkommen zum Eltern Calendar</h1>
+        
+        <!-- Buttons section -->
+        <div class="space-y-4">
+            <button 
+                id="view-calendar-button" 
+                class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+                Plan erstellen
+            </button>
+            <button 
+                id="add-user-button" 
+                class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+            >
+                Benutzer Hinzufügen
+            </button>
+            <button 
+                id="options-button" 
+                class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            >
+                Optionen
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        document.getElementById('add-user-button').addEventListener('click', () => {
+            ipcRenderer.send('navigate', 'add-user.html'); // Navigate to add-user.html
+        });
+
+        document.getElementById('view-calendar-button').addEventListener('click', () => {
+            ipcRenderer.send('navigate', 'plan.html'); // Navigate to plan.html
+        });
+
+        document.getElementById('options-button').addEventListener('click', () => {
+            ipcRenderer.send('navigate', 'options.html'); // Navigate to options.html
+        });
+    </script>
+</body>
+
+</html>

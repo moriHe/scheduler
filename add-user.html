@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benutzer Hinzufügen</title>
+    <link rel="stylesheet" href="./src/output.css">
+</head>
+<body class="bg-gray-100 h-screen flex items-center justify-center">
+
+    <div class="bg-white shadow-md rounded-lg p-8 w-full max-w-lg">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Benutzer Hinzufügen</h1>
+        
+        <!-- Input field for Benutzername -->
+        <input 
+            type="text" 
+            id="user-name" 
+            placeholder="Benutzername" 
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-4"
+        />
+
+        <!-- Buttons -->
+        <div class="flex justify-between items-center">
+            <button 
+                id="save-user-button" 
+                class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+            >
+                Benutzer Speichern
+            </button>
+            
+            <button 
+                id="back-button" 
+                class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+            >
+                Zurück
+            </button>
+        </div>
+
+        <!-- List of saved users -->
+        <h2 class="text-xl font-semibold text-green-600 mt-6">Familien:</h2>
+        <ol id="user-list" class="list-decimal ml-6 mt-2 space-y-1 text-gray-700">
+            <!-- User list items will go here -->
+        </ol>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        // Function to load users and display them
+        function loadUsers() {
+            ipcRenderer.invoke('load-users').then(users => {
+                const userList = document.getElementById('user-list');
+                userList.innerHTML = ''; // Clear the list first
+
+                // Add each user to the list
+                if (Array.isArray(users)) { // Check if users is an array
+                    users.forEach(user => {
+                        const li = document.createElement('li');
+                        li.textContent = user; // Display the user's name
+                        userList.appendChild(li);
+                    });
+                } else {
+                    console.error('Loaded users is not an array:', users);
+                }
+            });
+        }
+
+        // Call loadUsers when the page is loaded
+        window.onload = loadUsers;
+
+        // Go back to the front page
+        document.getElementById('back-button').addEventListener('click', () => {
+            ipcRenderer.send('navigate', 'index.html');
+        });
+
+        // Save the user
+        document.getElementById('save-user-button').addEventListener('click', () => {
+            const userName = document.getElementById('user-name').value;
+            if (userName) {
+                // Send the user name to the main process to save it
+                ipcRenderer.send('save-users', userName);
+                document.getElementById('user-name').value = ''; // Clear the input
+                loadUsers(); // Reload the users after saving
+            }
+        });
+    </script>
+
+</body>
+</html>

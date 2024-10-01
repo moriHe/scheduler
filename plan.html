@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan erstellen</title>
+    <link rel="stylesheet" href="./src/output.css">
+    <style>
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr); /* 7 columns for days of the week */
+            gap: 10px; /* Space between days */
+            margin: 0 auto; /* Center the calendar */
+            max-width: 600px; /* Maximum width of the calendar */
+        }
+
+        .calendar-day {
+            background-color: #E0F7FA; /* Light cyan background */
+            border: 1px solid #00796B; /* Teal border */
+            border-radius: 5px; /* Rounded corners */
+            padding: 10px; /* Space inside each day */
+            text-align: center; /* Center text */
+            cursor: pointer; /* Change cursor on hover */
+            transition: background-color 0.3s; /* Smooth color transition */
+        }
+
+        .calendar-day:hover {
+            background-color: #B2EBF2; /* Darker cyan on hover */
+        }
+
+        .calendar-day.not-available {
+            background-color: #FFCCBC; /* Light red background for not available */
+            color: #D32F2F; /* Dark red text */
+        }
+
+        .calendar-header {
+            font-weight: bold;
+            font-size: 1.2rem; /* Larger text for headers */
+            color: #00796B; /* Teal text color */
+            text-align: center; /* Center header text */
+        }
+
+        .header-container {
+            display: contents; /* Allow grid layout */
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 h-screen flex flex-col items-center justify-start p-6">
+    <div class="bg-white shadow-md rounded-lg p-8 w-full max-w-3xl text-center">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Plan erstellen</h1>
+
+        <!-- Month and Year Selection -->
+        <div class="mb-6">
+            <label for="month" class="mr-2 font-semibold">Monat:</label>
+            <select id="month" class="border rounded p-2">
+                <option value="0">Januar</option>
+                <option value="1">Februar</option>
+                <option value="2">März</option>
+                <option value="3">April</option>
+                <option value="4">Mai</option>
+                <option value="5">Juni</option>
+                <option value="6">Juli</option>
+                <option value="7">August</option>
+                <option value="8">September</option>
+                <option value="9">Oktober</option>
+                <option value="10">November</option>
+                <option value="11">Dezember</option>
+            </select>
+
+            <label for="year" class="ml-4 mr-2 font-semibold">Jahr:</label>
+            <select id="year" class="border rounded p-2">
+                <!-- Dynamically populated later -->
+            </select>
+        </div>
+
+        <!-- Users and Calendar Table -->
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Benutzer</h2>
+        <table class="min-w-full bg-white border border-gray-300">
+            <thead>
+                <tr>
+                    <th class="border-b-2 border-gray-300 p-2">Benutzer</th>
+                    <th class="border-b-2 border-gray-300 p-2">Kalender</th>
+                </tr>
+            </thead>
+            <tbody id="user-table-body">
+                <!-- Dynamically populated later -->
+            </tbody>
+        </table>
+
+        <button 
+            id="back-button" 
+            class="mt-4 w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+        >
+            Zurück
+        </button>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        let usersData = []; // To store user data temporarily
+
+        // Load users and populate year select box
+        window.onload = () => {
+            ipcRenderer.invoke('load-users').then(users => {
+                usersData = users; // Store the user data temporarily
+                const formattedUsers = formatUsersData(usersData); // Convert to required format
+                populateYearSelect();
+                populateUserTable(formattedUsers); // Use the formatted users data
+            });
+
+            // Go back to the front page
+            document.getElementById('back-button').addEventListener('click', () => {
+                ipcRenderer.send('navigate', 'index.html'); // Navigate back to index.html
+            });
+
+            // Add event listeners for month and year change
+            document.getElementById('month').addEventListener('change', () => updateCalendar());
+            document.getElementById('year').addEventListener('change', () => updateCalendar());
+        };
+
+        function formatUsersData(users) {
+            // Convert the flat user array into the desired object format
+            return users.map(user => ({ user: user, not_available: [] }));
+        }
+
+        function populateYearSelect() {
+            const yearSelect = document.getElementById('year');
+            const currentYear = new Date().getFullYear();
+            yearSelect.innerHTML = ''; // Clear existing options
+            for (let i = currentYear; i <= currentYear + 10; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                yearSelect.appendChild(option);
+            }
+            yearSelect.value = currentYear; // Default to the current year
+        }
+
+        function updateCalendar() {
+            const users = formatUsersData(usersData); // Reformat users data
+            populateUserTable(users); // Update the user table with the new month/year
+        }
+
+        function populateUserTable(users) {
+            const userTableBody = document.getElementById('user-table-body');
+            userTableBody.innerHTML = ''; // Clear existing table rows
+
+            const month = document.getElementById('month').value;
+            const year = document.getElementById('year').value;
+
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.classList.add('border-b');
+
+                const userCell = document.createElement('td');
+                userCell.classList.add('p-2');
+                userCell.textContent = user.user; // Display user name
+                row.appendChild(userCell);
+
+                const calendarCell = document.createElement('td');
+                calendarCell.classList.add('p-2');
+
+                // Create calendar days for the month
+                const daysContainer = document.createElement('div');
+                daysContainer.classList.add('calendar');
+
+                // Add day headers (So, Mo, Di, Mi, Do, Fr, Sa)
+                const daysOfWeek = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+                daysOfWeek.forEach(day => {
+                    const dayHeader = document.createElement('div');
+                    dayHeader.classList.add('calendar-header');
+                    dayHeader.textContent = day;
+                    daysContainer.appendChild(dayHeader);
+                });
+
+                // Fill in empty cells for alignment
+                const firstDayOfMonth = new Date(year, parseInt(month), 1).getDay();
+                for (let i = 0; i < firstDayOfMonth; i++) {
+                    const emptyCell = document.createElement('div');
+                    emptyCell.classList.add('calendar-day'); // Keep the style
+                    daysContainer.appendChild(emptyCell);
+                }
+
+                const daysInMonth = new Date(year, parseInt(month) + 1, 0).getDate(); // Get number of days in the month
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dayButton = document.createElement('div');
+                    dayButton.classList.add('calendar-day');
+                    dayButton.textContent = day;
+
+                    // Check if the day is already not available for the user
+                    const isNotAvailable = user.not_available.includes(`${year}-${parseInt(month) + 1}-${day}`);
+                    if (isNotAvailable) {
+                        dayButton.classList.add('not-available'); // Highlight already not available days
+                    }
+
+                    dayButton.addEventListener('click', () => {
+                        // Toggle day availability
+                        const dateKey = `${year}-${parseInt(month) + 1}-${day}`;
+
+                        // Check if the day is currently in not_available
+                        const isCurrentlyNotAvailable = user.not_available.includes(dateKey);
+                        if (isCurrentlyNotAvailable) {
+                            // Remove from not_available
+                            user.not_available = user.not_available.filter(date => date !== dateKey);
+                            dayButton.classList.remove('not-available'); // Change button color back
+                        } else {
+                            // Add to not_available
+                            user.not_available.push(dateKey);
+                            dayButton.classList.add('not-available'); // Change button color to indicate selection
+                        }
+                    });
+
+                    daysContainer.appendChild(dayButton);
+                }
+                calendarCell.appendChild(daysContainer);
+                row.appendChild(calendarCell);
+                userTableBody.appendChild(row);
+            });
+        }
+    </script>
+</body>
+
+</html>
