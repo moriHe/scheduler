@@ -98,7 +98,7 @@
 
         <button id="generate-pdf-button" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
             Generate Calendar PDF
-        </button>        
+        </button>
 
         <button 
             id="back-button" 
@@ -135,7 +135,7 @@
 
         function formatUsersData(users) {
             // Convert the flat user array into the desired object format
-            return users.map(user => ({ name: user, not_available: [] }));
+            return users.map(user => ({ name: user, not_available: [] })); // Adjust here to include not_available if needed
         }
 
         function populateYearSelect() {
@@ -191,7 +191,7 @@
                 // Fill in empty cells for alignment
                 const firstDayOfMonth = new Date(year, parseInt(month), 1).getDay(); // Get day index (0-6) where 0 is Sunday
                 const firstDayAdjusted = (firstDayOfMonth + 6) % 7; // Adjust for the new starting day (Monday)
-                
+
                 for (let i = 0; i < firstDayAdjusted; i++) {
                     const emptyCell = document.createElement('div');
                     emptyCell.classList.add('calendar-day'); // Keep the style
@@ -250,7 +250,8 @@
             };
 
             try {
-                const calendar = assignUsersToCalendar(month, year, usersData, options);
+                const formattedUsers = formatUsersData(usersData); // Format users data here
+                const calendar = assignUsersToCalendar(month, year, formattedUsers, options); // Pass the formatted users array
                 generatePDF(calendar, month, year);
                 console.log('PDF generated successfully.');
             } catch (error) {
