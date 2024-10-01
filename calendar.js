@@ -93,13 +93,14 @@ function assignUsersToCalendar(month, year, users, options = {}) {
 // Helper function to format the date in the "1. Okt. Dienstag" format
 function formatDate(day, month, year) {
     const date = new Date(year, month - 1, day);
-    return format(date, 'dd.MM.yy', { locale: de });
+    return format(date, 'dd.MM', { locale: de });
 }
 
 // Helper function to get day of the week as "Mo, Di, Mi" etc.
 function formatDayOfWeek(day, month, year) {
     const date = new Date(year, month - 1, day);
-    return format(date, 'EE', { locale: de }); // Format as short day, e.g., "Mo" for Monday
+    const formattedDay = format(date, 'EE', { locale: de })
+    return formattedDay.endsWith(".") ? formattedDay.slice(0, -1) : formattedDay; // Format as short day, e.g., "Mo" for Monday
 }
 
 // Function to generate the PDF
