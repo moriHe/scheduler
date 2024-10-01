@@ -16,7 +16,7 @@ function assignUsersToCalendar(month, year, users, options = {}) {
 
     // Helper function to check if a user is available on a particular day
     function isUserAvailable(user, date) {
-        const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+        const formattedDate = `${year}-${month}-${date}`;
         return !user.not_available.includes(formattedDate);
     }
 
