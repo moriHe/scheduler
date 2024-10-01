@@ -138,6 +138,13 @@
         let usersData = []; // To store user data temporarily
         let formattedUsers = []; // To store the formatted users data
         let selectedWeekdays = [];
+        const WEEKDAY_MAPPING = {
+            Mo: "Monday",
+            Di: "Tuesday",
+            Mi: "Wednesday",
+            Do: "Thursday",
+            Fr: "Friday"
+        }
 
         // Load users and populate year select box
         window.onload = () => {
@@ -242,8 +249,6 @@
                     const dayName = daysOfWeek[dayOfWeek - 1];
                     console.log(day, dayOfWeek, dayName)
 
-                   // console.log(dayName, dayOfWeek, !selectedWeekdays.includes(dayName), selectedWeekdays)
-
                     if (dayOfWeek === 0 || dayOfWeek === 6) {
                         dayButton.classList.add('weekend'); // Grey out weekend days
                     } else if (!selectedWeekdays.includes(dayName)) {
@@ -289,9 +294,9 @@
             const year = parseInt(document.getElementById('year').value);
 
             const selectedWeekdays = Array.from(document.querySelectorAll('.weekday-checkbox:checked'))
-                .map(checkbox => checkbox.value);
+                .map(checkbox => WEEKDAY_MAPPING[checkbox.value]);
 
-            const options = {
+                const options = {
                 weekdays: selectedWeekdays, // only week days
                 holidays: ["2024-10-03", "2024-10-31"] // List of holidays
             };
