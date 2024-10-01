@@ -1,4 +1,4 @@
-const PDFDocument = require('pdfkit');
+const PDFDocument = require('pdfkit-table');
 const fs = require('fs');
 const { format } = require("date-fns")
 const { de } = require("date-fns/locale")
@@ -92,46 +92,53 @@ function assignUsersToCalendar(month, year, users, options = {}) {
 // Helper function to format the date in the "1. Okt. Dienstag" format
 function formatDate(day, month, year) {
     const date = new Date(year, month - 1, day);
-    const options = { day: 'numeric', month: 'short', weekday: 'long' };
-    return date.toLocaleDateString('de-DE', options); // Use "de-DE" for German format
+    return format(date, 'dd.MM.', { locale: de });
+}
+
+// Helper function to get day of the week as "Mo, Di, Mi" etc.
+function formatDayOfWeek(day, month, year) {
+    const date = new Date(year, month - 1, day);
+    return format(date, 'EE', { locale: de }); // Format as short day, e.g., "Mo" for Monday
 }
 
 // Function to generate the PDF
-function generatePDF(calendar, month, year, filePath) {
-    // Create a new PDF document
-    const doc = new PDFDocument();
+async function generatePDF(calendar, month, year, filePath, excludedDays, holidays) {
+    // Create a new PDF document with margins
+    const doc = new PDFDocument({ margin: 30, size: 'A4' });
 
     // Pipe the output to a file
     doc.pipe(fs.createWriteStream(filePath));
 
     // Add a title
-    doc.fontSize(18).text(`Elterndienst ${format(new Date(year, month - 1), "MMMM yyyy", {locale: de})}`, {
-        align: 'center'
-    });
+    doc.fontSize(18).text(`Elterndienstplan`, { align: 'center' });
+    doc.fontSize(14).text(`${format(new Date(year, month - 1), 'MMMM yyyy', { locale: de })}`, { align: 'center' });
 
     // Add some space
-    doc.moveDown();
+    doc.moveDown(2);
 
-    // Define table headers
-    doc.fontSize(12).text('Date', { continued: true, underline: true }).text('Elternpaar 1', { continued: true, underline: true, align: 'center' }).text('Elternpaar 2', { underline: true, align: 'right' });
-    doc.moveDown(0.5);
+    let rows = []
 
-    // Iterate through the calendar data and generate rows
     for (const day in calendar) {
         const [parent1, parent2] = calendar[day];
-        const formattedDate = formatDate(day, month, year);
-
-        // Create a row in the table
-        doc.fontSize(10)
-            .text(formattedDate, { continued: true })
-            .text(parent1, { continued: true, align: 'center' })
-            .text(parent2, { align: 'right' });
-
-        // Add some space after each row
-        doc.moveDown(0.5);
+        rows.push([`${formatDate(day, month, year)}`, `${formatDayOfWeek(day, month, year)}`, parent1, parent2])
     }
 
-    // Finalize the PDF and end the stream
+
+    // Prepare the table data with headers
+    const table = {
+        headers: ['Datum', 'Tag', 'Elternpaar 1', 'Elternpaar 2'],
+        rows
+    };
+
+    // Create the table inside the PDF
+    await doc.table(table, {
+        prepareHeader: () => doc.font("Helvetica-Bold").fontSize(10),
+        prepareRow: (row, indexColumn, indexRow, rectRow, rectCell) => {
+            doc.font("Helvetica").fontSize(9);
+        }
+    });
+
+    // Finalize the document and write the file
     doc.end();
 }
 
