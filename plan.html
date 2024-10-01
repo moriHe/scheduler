@@ -123,21 +123,27 @@
         </table>
 
         <!-- Holidays Section -->
-    <h2 class="text-xl font-bold text-gray-800 mb-4 mt-10">Feiertage</h2>
-    <div class="mb-4">
-        <div id="holidays-calendar" class="calendar"></div>
-    </div>
+        <h2 class="text-xl font-bold text-gray-800 mb-4 mt-10">Feiertage</h2>
+        <div class="mb-4">
+            <div id="holidays-calendar" class="calendar"></div>
+        </div>
+
+        <!-- Holidays Section -->
+        <h2 class="text-xl font-bold text-gray-800 mb-4 mt-10">Team übernimmt</h2>
+        <div class="mb-4">
+            <div id="team-calendar" class="calendar"></div>
+        </div>
 
 
 
-        <button id="generate-pdf-button" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
-            Generate Calendar PDF
-        </button>
+            <button id="generate-pdf-button" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+                Generate Calendar PDF
+            </button>
 
-        <button id="back-button" class="mt-4 w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400">
-            Zurück
-        </button>
-    </div>
+            <button id="back-button" class="mt-4 w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400">
+                Zurück
+            </button>
+        </div>
 
     <script>
         const { ipcRenderer } = require('electron');
@@ -154,6 +160,7 @@
             Fr: "Friday"
         }
         let holidays = [];
+        let teamdays = [];
 
         // Load users and populate year select box
         window.onload = () => {
@@ -199,11 +206,13 @@
             // Clear not_available array for each user when switching months or years
             formattedUsers.forEach(user => user.not_available = []);
             holidays = [];
+            teamdays = [];
             selectedWeekdays = Array.from(document.querySelectorAll('.weekday-checkbox:checked'))
             .map(checkbox => checkbox.value);
             
             populateUserTable(formattedUsers); // Update the user table with the formatted users data
-            updateHolidaysCalendar();
+            updateHolidayCalendar();
+            updateTeamTakesSlotCalendar();
         }
 
         function populateUserTable(users) {
@@ -258,7 +267,6 @@
                     // Check if the day is Saturday (6) or Sunday (0)
                     const dayOfWeek = new Date(year, parseInt(month), day).getDay();
                     const dayName = daysOfWeek[dayOfWeek - 1];
-                    console.log(day, dayOfWeek, dayName)
 
                     if (dayOfWeek === 0 || dayOfWeek === 6) {
                         dayButton.classList.add('weekend'); // Grey out weekend days
@@ -300,13 +308,21 @@
             });
         }
 
-        // Create a function to update the holidays calendar
-        function updateHolidaysCalendar() {
+        function updateHolidayCalendar() {
+            updateGenericCalender('holidays-calendar', holidays)
+        }
+
+        function updateTeamTakesSlotCalendar() {
+            updateGenericCalender("team-calendar", teamdays)
+        }
+
+        // Create a function to update the generic calendars
+        function updateGenericCalender(id, subjectArray) {
             const month = document.getElementById('month').value;
             const year = document.getElementById('year').value;
 
-            const holidaysCalendar = document.getElementById('holidays-calendar');
-            holidaysCalendar.innerHTML = ''; // Clear existing days
+            const subjectCalendar = document.getElementById(id);
+            subjectCalendar.innerHTML = ''; // Clear existing days
 
             // Add day headers (Mo, Di, Mi, Do, Fr, Sa, So)
             const daysOfWeek = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
@@ -314,7 +330,7 @@
                 const dayHeader = document.createElement('div');
                 dayHeader.classList.add('calendar-header');
                 dayHeader.textContent = day;
-                holidaysCalendar.appendChild(dayHeader);
+                subjectCalendar.appendChild(dayHeader);
             });
 
             // Fill in empty cells for alignment
@@ -324,7 +340,7 @@
             for (let i = 0; i < firstDayAdjusted; i++) {
                 const emptyCell = document.createElement('div');
                 emptyCell.classList.add('calendar-day'); // Keep the style
-                holidaysCalendar.appendChild(emptyCell);
+                subjectCalendar.appendChild(emptyCell);
             }
 
             const daysInMonth = new Date(year, parseInt(month) + 1, 0).getDate(); // Get number of days in the month
@@ -345,28 +361,28 @@
                     dayButton.classList.add('excluded'); // Gray out excluded days
                     dayButton.style.cursor = 'default'; // Ensure default cursor
                 } else {
-                    // Check if the day is already marked as a holiday
-                    const isHoliday = holidays.includes(`${year}-${parseInt(month) + 1}-${day}`);
-                    if (isHoliday) {
-                        dayButton.classList.add('not-available'); // Highlight holiday days
+                    // Check if the day is already marked as a subject
+                    const isSubject = subjectArray.includes(`${year}-${parseInt(month) + 1}-${day}`);
+                    if (isSubject) {
+                        dayButton.classList.add('not-available'); // Highlight subject days
                     }
                     dayButton.addEventListener('click', () => {
-                        // Toggle day holiday status
+                        // Toggle day subject status
                         const dateKey = `${year}-${parseInt(month) + 1}-${day}`;
-                        const isCurrentlyHoliday = holidays.includes(dateKey);
-                        if (isCurrentlyHoliday) {
-                            // Remove from holidays
-                            holidays = holidays.filter(date => date !== dateKey);
+                        const isCurrentlySubject = subjectArray.includes(dateKey);
+                        if (isCurrentlySubject) {
+                            // Remove from subject array
+                            subjectArray = subjectArray.filter(date => date !== dateKey);
                             dayButton.classList.remove('not-available'); // Change button color back
                         } else {
-                            // Add to holidays
-                            holidays.push(dateKey);
+                            // Add to subject array
+                            subjectArray.push(dateKey);
                             dayButton.classList.add('not-available'); // Highlight
                         }
                     });
                 }
 
-                holidaysCalendar.appendChild(dayButton);
+                subjectCalendar.appendChild(dayButton);
             }
         }
 
@@ -379,7 +395,8 @@
 
                 const options = {
                 weekdays: selectedWeekdays, // only week days
-                holidays // List of holidays
+                holidays,  // List of holidays
+                teamdays // List of days the team takes a slot
             };
 
             try {
