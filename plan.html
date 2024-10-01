@@ -96,6 +96,10 @@
             </tbody>
         </table>
 
+        <button id="generate-pdf-button" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+            Generate Calendar PDF
+        </button>        
+
         <button 
             id="back-button" 
             class="mt-4 w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
@@ -106,6 +110,8 @@
 
     <script>
         const { ipcRenderer } = require('electron');
+        const { assignUsersToCalendar, generatePDF } = require('./calendar.js');
+
         let usersData = []; // To store user data temporarily
 
         // Load users and populate year select box
@@ -129,7 +135,7 @@
 
         function formatUsersData(users) {
             // Convert the flat user array into the desired object format
-            return users.map(user => ({ user: user, not_available: [] }));
+            return users.map(user => ({ name: user, not_available: [] }));
         }
 
         function populateYearSelect() {
@@ -163,7 +169,7 @@
 
                 const userCell = document.createElement('td');
                 userCell.classList.add('p-2');
-                userCell.textContent = user.user; // Display user name
+                userCell.textContent = user.name; // Display user name
                 row.appendChild(userCell);
 
                 const calendarCell = document.createElement('td');
@@ -233,6 +239,27 @@
                 userTableBody.appendChild(row);
             });
         }
+
+        function createAndDownloadCalendarPDF() {
+            const month = parseInt(document.getElementById('month').value) + 1; // Add 1 because months are 0-indexed in JS
+            const year = parseInt(document.getElementById('year').value);
+
+            const options = {
+                weekdays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], // Only weekdays
+                holidays: ["2024-10-03", "2024-10-31"] // List of holidays
+            };
+
+            try {
+                const calendar = assignUsersToCalendar(month, year, usersData, options);
+                generatePDF(calendar, month, year);
+                console.log('PDF generated successfully.');
+            } catch (error) {
+                console.error(error.message);
+            }
+        }
+
+        // Attach the PDF generation function to an event, e.g., a button click
+        document.getElementById('generate-pdf-button').addEventListener('click', createAndDownloadCalendarPDF);
     </script>
 </body>
 
