@@ -22,7 +22,7 @@ function assignUsersToCalendar(month, year, users, options = {}) {
 
     // Helper function to check if a day is a holiday
     function isHoliday(date) {
-        const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+        const formattedDate = `${year}-${month}-${date}`;
         return holidays.includes(formattedDate);
     }
 

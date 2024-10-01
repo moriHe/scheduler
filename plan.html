@@ -109,11 +109,11 @@
         
 
         <!-- Users and Calendar Table -->
-        <h2 class="text-xl font-bold text-gray-800 mb-4">Benutzer</h2>
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Verfügbarkeiten Eltern</h2>
         <table class="min-w-full bg-white border border-gray-300">
             <thead>
                 <tr>
-                    <th class="border-b-2 border-gray-300 p-2">Benutzer</th>
+                    <th class="border-b-2 border-gray-300 p-2">Eltern</th>
                     <th class="border-b-2 border-gray-300 p-2">Kalender</th>
                 </tr>
             </thead>
@@ -121,6 +121,14 @@
                 <!-- Dynamically populated later -->
             </tbody>
         </table>
+
+        <!-- Holidays Section -->
+    <h2 class="text-xl font-bold text-gray-800 mb-4 mt-10">Feiertage</h2>
+    <div class="mb-4">
+        <div id="holidays-calendar" class="calendar"></div>
+    </div>
+
+
 
         <button id="generate-pdf-button" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
             Generate Calendar PDF
@@ -145,6 +153,7 @@
             Do: "Thursday",
             Fr: "Friday"
         }
+        let holidays = [];
 
         // Load users and populate year select box
         window.onload = () => {
@@ -189,10 +198,12 @@
         function updateCalendar() {
             // Clear not_available array for each user when switching months or years
             formattedUsers.forEach(user => user.not_available = []);
+            holidays = [];
             selectedWeekdays = Array.from(document.querySelectorAll('.weekday-checkbox:checked'))
             .map(checkbox => checkbox.value);
             
             populateUserTable(formattedUsers); // Update the user table with the formatted users data
+            updateHolidaysCalendar();
         }
 
         function populateUserTable(users) {
@@ -289,6 +300,76 @@
             });
         }
 
+        // Create a function to update the holidays calendar
+        function updateHolidaysCalendar() {
+            const month = document.getElementById('month').value;
+            const year = document.getElementById('year').value;
+
+            const holidaysCalendar = document.getElementById('holidays-calendar');
+            holidaysCalendar.innerHTML = ''; // Clear existing days
+
+            // Add day headers (Mo, Di, Mi, Do, Fr, Sa, So)
+            const daysOfWeek = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+            daysOfWeek.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.classList.add('calendar-header');
+                dayHeader.textContent = day;
+                holidaysCalendar.appendChild(dayHeader);
+            });
+
+            // Fill in empty cells for alignment
+            const firstDayOfMonth = new Date(year, parseInt(month), 1).getDay(); // Get day index (0-6) where 0 is Sunday
+            const firstDayAdjusted = (firstDayOfMonth + 6) % 7; // Adjust for the new starting day (Monday)
+
+            for (let i = 0; i < firstDayAdjusted; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.classList.add('calendar-day'); // Keep the style
+                holidaysCalendar.appendChild(emptyCell);
+            }
+
+            const daysInMonth = new Date(year, parseInt(month) + 1, 0).getDate(); // Get number of days in the month
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayButton = document.createElement('div');
+                dayButton.classList.add('calendar-day');
+                dayButton.textContent = day;
+
+                // Check if the day is Saturday (6) or Sunday (0)
+                const dayOfWeek = new Date(year, parseInt(month), day).getDay();
+                const dayName = daysOfWeek[dayOfWeek - 1];
+
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    dayButton.classList.add('weekend'); // Grey out weekend days
+                } else if (!selectedWeekdays.includes(dayName)) {
+                    // If the day is not in the selected weekdays, mark it as excluded
+                    dayButton.classList.add('excluded'); // Gray out excluded days
+                    dayButton.style.cursor = 'default'; // Ensure default cursor
+                } else {
+                    // Check if the day is already marked as a holiday
+                    const isHoliday = holidays.includes(`${year}-${parseInt(month) + 1}-${day}`);
+                    if (isHoliday) {
+                        dayButton.classList.add('not-available'); // Highlight holiday days
+                    }
+                    dayButton.addEventListener('click', () => {
+                        // Toggle day holiday status
+                        const dateKey = `${year}-${parseInt(month) + 1}-${day}`;
+                        const isCurrentlyHoliday = holidays.includes(dateKey);
+                        if (isCurrentlyHoliday) {
+                            // Remove from holidays
+                            holidays = holidays.filter(date => date !== dateKey);
+                            dayButton.classList.remove('not-available'); // Change button color back
+                        } else {
+                            // Add to holidays
+                            holidays.push(dateKey);
+                            dayButton.classList.add('not-available'); // Highlight
+                        }
+                    });
+                }
+
+                holidaysCalendar.appendChild(dayButton);
+            }
+        }
+
         document.getElementById('generate-pdf-button').addEventListener('click', async () => {
             const month = parseInt(document.getElementById('month').value) + 1; // Add 1 because months are 0-indexed in JS
             const year = parseInt(document.getElementById('year').value);
@@ -298,7 +379,7 @@
 
                 const options = {
                 weekdays: selectedWeekdays, // only week days
-                holidays: ["2024-10-03", "2024-10-31"] // List of holidays
+                holidays // List of holidays
             };
 
             try {
@@ -320,9 +401,6 @@
                 updateCalendar();
             });
         });
-
-        // The rest of your window.onload function...
-
     </script>
 </body>
 
