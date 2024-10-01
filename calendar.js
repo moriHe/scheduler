@@ -1,5 +1,7 @@
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
+const { format } = require("date-fns")
+const { de } = require("date-fns/locale")
 
 function assignUsersToCalendar(month, year, users, options = {}) {
     const daysInMonth = new Date(year, month, 0).getDate(); // Get the number of days in the month
@@ -103,7 +105,7 @@ function generatePDF(calendar, month, year, filePath) {
     doc.pipe(fs.createWriteStream(filePath));
 
     // Add a title
-    doc.fontSize(18).text(`Eltern Calendar for ${formatDate(1, month, year).split(' ')[1]} ${year}`, {
+    doc.fontSize(18).text(`Elterndienst ${format(new Date(year, month - 1), "MMMM yyyy", {locale: de})}`, {
         align: 'center'
     });
 
