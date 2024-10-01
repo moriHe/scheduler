@@ -120,23 +120,33 @@ async function generatePDF(calendar, month, year, filePath, excludedDays, holida
 
     for (const day in calendar) {
         const [parent1, parent2] = calendar[day];
-        rows.push([`${formatDate(day, month, year)}`, `${formatDayOfWeek(day, month, year)}`, parent1, parent2])
+        rows.push([`${formatDate(day, month, year)}`, `${formatDayOfWeek(day, month, year)}`, parent1, `${formatDate(day, month, year)}`, `${formatDayOfWeek(day, month, year)}`, parent2])
     }
 
 
     // Prepare the table data with headers
     const table = {
-        headers: ['Datum', 'Tag', 'Elternpaar 1', 'Elternpaar 2'],
+        headers: ['Datum', 'Tag', 'Elternpaar 1', 'Datum', 'Tag', 'Elternpaar 2'],
         rows
     };
 
-    // Create the table inside the PDF
-    await doc.table(table, {
-        prepareHeader: () => doc.font("Helvetica-Bold").fontSize(10),
+    // Configure the table rendering
+    doc.table(table, {
+        prepareHeader: () => doc.font("Helvetica-Bold").fontSize(8),
         prepareRow: (row, indexColumn, indexRow, rectRow, rectCell) => {
-            doc.font("Helvetica").fontSize(9);
-        }
-    });
+            doc.font("Helvetica").fontSize(8).fillColor('black'); // Set font color to black
+
+            // Alternate row background colors
+            if (indexRow % 2 !== 0) {
+                doc.addBackground(rectRow, 'lightgray', 0.25);  // Odd rows (light red)
+            }
+
+        },
+        columnsSize: [40, 20, 220, 40, 20, 220],
+        minRowHeight: 20
+    });    
+    
+    
 
     // Finalize the document and write the file
     doc.end();
